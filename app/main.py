@@ -1,10 +1,11 @@
 from fastapi import FastAPI
-from app.api.routes import products
+from app.api.routes import products, upload
 
 app = FastAPI(title="Product Importer API", version="1.0.0")
 
 # Include routers - connecting all the API pieces together
 app.include_router(products.router)
+app.include_router(upload.router)
 
 @app.get("/")
 def root():
