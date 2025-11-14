@@ -1,15 +1,16 @@
 from fastapi import FastAPI
-from app.api.routes import products, upload
+from app.api.routes import products, upload, webhooks
 
 app = FastAPI(title="Product Importer API", version="1.0.0")
 
 # Include routers - connecting all the API pieces together
 app.include_router(products.router)
 app.include_router(upload.router)
+app.include_router(webhooks.router)
 
 @app.get("/")
 def root():
-    """Welcome endpoint - your first stop in the API journey."""
+    """Welcome endpoint - the first stop in the API journey."""
     return {"message": "Product Importer API is running"}
 
 @app.get("/health")
