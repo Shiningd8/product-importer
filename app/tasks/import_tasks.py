@@ -40,9 +40,16 @@ def import_csv_task(self, csv_content: str):
     db = SessionLocal()
     
     try:
+        # Initial progress update
+        self.update_progress(0, 0, "Starting CSV processing...")
+        
         # Progress callback that updates Redis
         def progress_callback(current: int, total: int, message: str):
-            self.update_progress(current, total, message)
+            try:
+                self.update_progress(current, total, message)
+            except Exception as e:
+                # Don't let progress callback errors break the import
+                print(f"Progress update error: {e}")
         
         # Create processor and process the CSV
         processor = CSVProcessor(db, progress_callback=progress_callback)

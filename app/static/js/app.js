@@ -54,8 +54,10 @@ function handleFileDrop(e) {
     e.preventDefault();
     e.currentTarget.style.background = '';
     const files = e.dataTransfer.files;
-    if (files.length > 0 && files[0].name.endsWith('.csv')) {
+    if (files.length > 0) {
         handleFile(files[0]);
+    } else {
+        alert('Please drop a CSV file');
     }
 }
 
@@ -65,35 +67,40 @@ function handleFileSelect(e) {
     }
 }
 
+let selectedFile = null;
+
 function handleFile(file) {
     const uploadPrompt = document.getElementById('upload-prompt');
     const uploadBtn = document.getElementById('upload-btn');
 
-    uploadPrompt.innerHTML = `<p>📄 Selected: ${file.name}</p>`;
-    uploadBtn.style.display = 'block';
-    uploadBtn.dataset.file = file.name;
-    uploadBtn.dataset.fileContent = null;
+    // Validate file type
+    if (!file.name.endsWith('.csv')) {
+        alert('Please select a CSV file');
+        return;
+    }
 
-    // Read file content
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        uploadBtn.dataset.fileContent = e.target.result;
-    };
-    reader.readAsText(file);
+    selectedFile = file;
+    uploadPrompt.innerHTML = `<p>📄 Selected: ${file.name}</p><p class="hint">Ready to upload</p>`;
+    uploadBtn.style.display = 'block';
+    uploadBtn.disabled = false;
 }
 
 async function handleFileUpload() {
     const uploadBtn = document.getElementById('upload-btn');
-    const fileContent = uploadBtn.dataset.fileContent;
+    const uploadPrompt = document.getElementById('upload-prompt');
 
-    if (!fileContent) {
+    if (!selectedFile) {
         alert('Please select a CSV file first');
         return;
     }
 
+    // Disable button and show loading state
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = 'Uploading...';
+    uploadPrompt.innerHTML = `<p>📤 Uploading ${selectedFile.name}...</p>`;
+
     const formData = new FormData();
-    const blob = new Blob([fileContent], { type: 'text/csv' });
-    formData.append('file', blob, 'products.csv');
+    formData.append('file', selectedFile);
 
     try {
         const response = await fetch(`${API_BASE}/upload`, {
@@ -101,12 +108,22 @@ async function handleFileUpload() {
             body: formData
         });
 
-        if (!response.ok) throw new Error('Upload failed');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ detail: 'Upload failed' }));
+            throw new Error(errorData.detail || 'Upload failed');
+        }
 
         const data = await response.json();
         startProgressTracking(data.task_id);
+
+        // Reset file input
+        document.getElementById('csv-file-input').value = '';
+        selectedFile = null;
     } catch (error) {
         alert('Upload failed: ' + error.message);
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Upload File';
+        uploadPrompt.innerHTML = `<p>📄 Selected: ${selectedFile?.name || 'No file'}</p>`;
     }
 }
 
@@ -118,49 +135,81 @@ function startProgressTracking(taskId) {
     uploadPrompt.style.display = 'none';
     uploadProgress.style.display = 'block';
     uploadBtn.style.display = 'none';
+    uploadBtn.disabled = false;
+    uploadBtn.textContent = 'Upload File';
 
     // Use SSE for real-time updates
     const eventSource = new EventSource(`${API_BASE}/upload/stream/${taskId}`);
 
     eventSource.onmessage = (event) => {
-        const progress = JSON.parse(event.data);
-        updateProgressUI(progress);
+        try {
+            const progress = JSON.parse(event.data);
+            updateProgressUI(progress);
 
-        if (progress.status === 'completed' || progress.status === 'failed') {
-            eventSource.close();
-            setTimeout(() => {
-                uploadPrompt.style.display = 'block';
-                uploadProgress.style.display = 'none';
-                uploadPrompt.innerHTML = '<p>Click to select CSV file or drag and drop</p><p class="hint">Supports up to 500,000 products</p>';
-                loadProducts(); // Refresh product list
-            }, 3000);
+            if (progress.status === 'completed' || progress.status === 'failed') {
+                eventSource.close();
+                setTimeout(() => {
+                    resetUploadUI();
+                    loadProducts(); // Refresh product list
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('Error parsing progress:', error);
         }
     };
 
-    eventSource.onerror = () => {
+    eventSource.onerror = (error) => {
+        console.error('SSE error:', error);
         eventSource.close();
         // Fallback to polling
         pollProgress(taskId);
     };
 }
 
+function resetUploadUI() {
+    const uploadPrompt = document.getElementById('upload-prompt');
+    const uploadProgress = document.getElementById('upload-progress');
+    const uploadBtn = document.getElementById('upload-btn');
+
+    uploadPrompt.style.display = 'block';
+    uploadProgress.style.display = 'none';
+    uploadBtn.style.display = 'none';
+    uploadPrompt.innerHTML = '<p>Click to select CSV file or drag and drop</p><p class="hint">Supports up to 500,000 products</p>';
+    selectedFile = null;
+}
+
 function pollProgress(taskId) {
+    let pollCount = 0;
+    const maxPolls = 3600; // Max 1 hour (3600 seconds)
+
     const interval = setInterval(async () => {
+        pollCount++;
+        if (pollCount > maxPolls) {
+            clearInterval(interval);
+            alert('Upload is taking too long. Please check the server logs.');
+            resetUploadUI();
+            return;
+        }
+
         try {
             const response = await fetch(`${API_BASE}/upload/status/${taskId}`);
+            if (!response.ok) {
+                throw new Error('Failed to get status');
+            }
+
             const progress = await response.json();
             updateProgressUI(progress);
 
             if (progress.status === 'completed' || progress.status === 'failed') {
                 clearInterval(interval);
                 setTimeout(() => {
-                    document.getElementById('upload-prompt').style.display = 'block';
-                    document.getElementById('upload-progress').style.display = 'none';
+                    resetUploadUI();
                     loadProducts();
-                }, 3000);
+                }, 2000);
             }
         } catch (error) {
             console.error('Progress polling error:', error);
+            // Continue polling on error
         }
     }, 1000);
 }

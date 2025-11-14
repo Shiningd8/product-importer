@@ -10,6 +10,10 @@ celery_app = Celery(
 )
 
 # Celery configuration - tuning it for optimal performance
+# Windows compatibility: use 'solo' pool instead of 'prefork' (which doesn't work on Windows)
+import sys
+worker_pool = 'solo' if sys.platform == 'win32' else 'prefork'
+
 celery_app.conf.update(
     task_serializer="json",
     accept_content=["json"],
@@ -19,5 +23,6 @@ celery_app.conf.update(
     task_track_started=True,  # Track when tasks start (useful for progress)
     task_time_limit=3600,  # 1 hour max per task (for those massive CSV files)
     worker_prefetch_multiplier=1,  # Process one task at a time per worker
+    worker_pool=worker_pool,  # Use solo pool on Windows
 )
 

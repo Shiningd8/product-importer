@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
     #  This is for theDatabase
-    DATABASE_URL: str = "postgresql://user:password@localhost/product_importer"
+    DATABASE_URL: str = "postgresql://user:Shiningd8!@localhost/product_importer"
     
     # This is for the Redis
     REDIS_URL: str = "redis://localhost:6379/0"
