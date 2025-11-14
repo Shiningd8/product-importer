@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Importer - Acme Inc.</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🛍️ Product Importer</h1>
+            <p>Manage your products, import CSV files, and configure webhooks</p>
+        </header>
+
+        <!-- File Upload Section -->
+        <section class="card" id="upload-section">
+            <h2>📤 Upload CSV File</h2>
+            <div class="upload-area" id="upload-area">
+                <input type="file" id="csv-file-input" accept=".csv" style="display: none;">
+                <div class="upload-prompt" id="upload-prompt">
+                    <p>Click to select CSV file or drag and drop</p>
+                    <p class="hint">Supports up to 500,000 products</p>
+                </div>
+                <div class="upload-progress" id="upload-progress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <p class="progress-text" id="progress-text">Processing...</p>
+                    <p class="progress-status" id="progress-status"></p>
+                </div>
+            </div>
+            <button class="btn-primary" id="upload-btn" style="display: none;">Upload File</button>
+        </section>
+
+        <!-- Products Section -->
+        <section class="card" id="products-section">
+            <div class="section-header">
+                <h2>📦 Products</h2>
+                <div class="actions">
+                    <button class="btn-secondary" id="refresh-products">Refresh</button>
+                    <button class="btn-primary" id="create-product-btn">+ New Product</button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters">
+                <input type="text" id="filter-sku" placeholder="Filter by SKU">
+                <input type="text" id="filter-name" placeholder="Filter by Name">
+                <select id="filter-active">
+                    <option value="">All Status</option>
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+                <button class="btn-secondary" id="apply-filters">Apply Filters</button>
+            </div>
+
+            <!-- Product Table -->
+            <div class="table-container">
+                <table id="products-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>SKU</th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Active</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-tbody"></tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" id="pagination"></div>
+
+            <!-- Bulk Delete -->
+            <div class="bulk-actions">
+                <button class="btn-danger" id="bulk-delete-btn">🗑️ Delete All Products</button>
+            </div>
+        </section>
+
+        <!-- Webhooks Section -->
+        <section class="card" id="webhooks-section">
+            <div class="section-header">
+                <h2>🔔 Webhooks</h2>
+                <button class="btn-primary" id="create-webhook-btn">+ New Webhook</button>
+            </div>
+            <div id="webhooks-list"></div>
+        </section>
+    </div>
+
+    <!-- Product Modal -->
+    <div class="modal" id="product-modal">
+        <div class="modal-content">
+            <span class="close" id="close-product-modal">&times;</span>
+            <h2 id="product-modal-title">Create Product</h2>
+            <form id="product-form">
+                <input type="hidden" id="product-id">
+                <label>SKU *</label>
+                <input type="text" id="product-sku" required>
+                <label>Name *</label>
+                <input type="text" id="product-name" required>
+                <label>Description</label>
+                <textarea id="product-description"></textarea>
+                <label>
+                    <input type="checkbox" id="product-active" checked> Active
+                </label>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary">Save</button>
+                    <button type="button" class="btn-secondary" id="cancel-product">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Webhook Modal -->
+    <div class="modal" id="webhook-modal">
+        <div class="modal-content">
+            <span class="close" id="close-webhook-modal">&times;</span>
+            <h2 id="webhook-modal-title">Create Webhook</h2>
+            <form id="webhook-form">
+                <input type="hidden" id="webhook-id">
+                <label>URL *</label>
+                <input type="url" id="webhook-url" required>
+                <label>Event Type *</label>
+                <select id="webhook-event-type" required>
+                    <option value="product.created">Product Created</option>
+                    <option value="product.updated">Product Updated</option>
+                    <option value="product.deleted">Product Deleted</option>
+                </select>
+                <label>Secret (optional)</label>
+                <input type="text" id="webhook-secret">
+                <label>Description</label>
+                <textarea id="webhook-description"></textarea>
+                <label>
+                    <input type="checkbox" id="webhook-enabled" checked> Enabled
+                </label>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary">Save</button>
+                    <button type="button" class="btn-secondary" id="cancel-webhook">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>
