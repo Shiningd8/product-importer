@@ -68,12 +68,12 @@ function handleFileSelect(e) {
 function handleFile(file) {
     const uploadPrompt = document.getElementById('upload-prompt');
     const uploadBtn = document.getElementById('upload-btn');
-    
+
     uploadPrompt.innerHTML = `<p>📄 Selected: ${file.name}</p>`;
     uploadBtn.style.display = 'block';
     uploadBtn.dataset.file = file.name;
     uploadBtn.dataset.fileContent = null;
-    
+
     // Read file content
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -85,7 +85,7 @@ function handleFile(file) {
 async function handleFileUpload() {
     const uploadBtn = document.getElementById('upload-btn');
     const fileContent = uploadBtn.dataset.fileContent;
-    
+
     if (!fileContent) {
         alert('Please select a CSV file first');
         return;
@@ -114,18 +114,18 @@ function startProgressTracking(taskId) {
     const uploadPrompt = document.getElementById('upload-prompt');
     const uploadProgress = document.getElementById('upload-progress');
     const uploadBtn = document.getElementById('upload-btn');
-    
+
     uploadPrompt.style.display = 'none';
     uploadProgress.style.display = 'block';
     uploadBtn.style.display = 'none';
 
     // Use SSE for real-time updates
     const eventSource = new EventSource(`${API_BASE}/upload/stream/${taskId}`);
-    
+
     eventSource.onmessage = (event) => {
         const progress = JSON.parse(event.data);
         updateProgressUI(progress);
-        
+
         if (progress.status === 'completed' || progress.status === 'failed') {
             eventSource.close();
             setTimeout(() => {
@@ -150,7 +150,7 @@ function pollProgress(taskId) {
             const response = await fetch(`${API_BASE}/upload/status/${taskId}`);
             const progress = await response.json();
             updateProgressUI(progress);
-            
+
             if (progress.status === 'completed' || progress.status === 'failed') {
                 clearInterval(interval);
                 setTimeout(() => {
@@ -169,7 +169,7 @@ function updateProgressUI(progress) {
     const progressFill = document.getElementById('progress-fill');
     const progressText = document.getElementById('progress-text');
     const progressStatus = document.getElementById('progress-status');
-    
+
     const percentage = progress.percentage || 0;
     progressFill.style.width = `${percentage}%`;
     progressFill.textContent = `${percentage}%`;
@@ -185,10 +185,10 @@ async function loadProducts() {
             page_size: pageSize,
             ...currentFilters
         });
-        
+
         const response = await fetch(`${API_BASE}/products?${params}`);
         const data = await response.json();
-        
+
         renderProducts(data.items);
         renderPagination(data);
     } catch (error) {
@@ -199,12 +199,12 @@ async function loadProducts() {
 function renderProducts(products) {
     const tbody = document.getElementById('products-tbody');
     tbody.innerHTML = '';
-    
+
     if (products.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">No products found</td></tr>';
         return;
     }
-    
+
     products.forEach(product => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -225,9 +225,9 @@ function renderProducts(products) {
 function renderPagination(data) {
     const pagination = document.getElementById('pagination');
     pagination.innerHTML = '';
-    
+
     if (data.total_pages <= 1) return;
-    
+
     for (let i = 1; i <= data.total_pages; i++) {
         const btn = document.createElement('button');
         btn.textContent = i;
@@ -246,12 +246,12 @@ function applyFilters() {
         name: document.getElementById('filter-name').value,
         active: document.getElementById('filter-active').value
     };
-    
+
     // Remove empty filters
     Object.keys(currentFilters).forEach(key => {
         if (!currentFilters[key]) delete currentFilters[key];
     });
-    
+
     currentPage = 1;
     loadProducts();
 }
@@ -260,9 +260,9 @@ function openProductModal(product = null) {
     const modal = document.getElementById('product-modal');
     const form = document.getElementById('product-form');
     const title = document.getElementById('product-modal-title');
-    
+
     form.reset();
-    
+
     if (product) {
         title.textContent = 'Edit Product';
         document.getElementById('product-id').value = product.id;
@@ -273,7 +273,7 @@ function openProductModal(product = null) {
     } else {
         title.textContent = 'Create Product';
     }
-    
+
     modal.classList.add('show');
 }
 
@@ -289,27 +289,27 @@ async function editProduct(id) {
 
 async function handleProductSubmit(e) {
     e.preventDefault();
-    
+
     const formData = {
         sku: document.getElementById('product-sku').value,
         name: document.getElementById('product-name').value,
         description: document.getElementById('product-description').value,
         active: document.getElementById('product-active').checked
     };
-    
+
     const productId = document.getElementById('product-id').value;
     const url = productId ? `${API_BASE}/products/${productId}` : `${API_BASE}/products`;
     const method = productId ? 'PUT' : 'POST';
-    
+
     try {
         const response = await fetch(url, {
             method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)
         });
-        
+
         if (!response.ok) throw new Error('Save failed');
-        
+
         closeProductModal();
         loadProducts();
     } catch (error) {
@@ -319,7 +319,7 @@ async function handleProductSubmit(e) {
 
 async function deleteProduct(id) {
     if (!confirm('Are you sure you want to delete this product?')) return;
-    
+
     try {
         const response = await fetch(`${API_BASE}/products/${id}`, { method: 'DELETE' });
         if (!response.ok) throw new Error('Delete failed');
@@ -331,7 +331,7 @@ async function deleteProduct(id) {
 
 async function handleBulkDelete() {
     if (!confirm('⚠️ WARNING: This will delete ALL products. This cannot be undone. Are you absolutely sure?')) return;
-    
+
     try {
         const response = await fetch(`${API_BASE}/products/bulk/all`, { method: 'DELETE' });
         const data = await response.json();
@@ -359,12 +359,12 @@ async function loadWebhooks() {
 
 function renderWebhooks(webhooks) {
     const container = document.getElementById('webhooks-list');
-    
+
     if (webhooks.length === 0) {
         container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No webhooks configured</p>';
         return;
     }
-    
+
     container.innerHTML = webhooks.map(webhook => `
         <div class="webhook-item">
             <div class="webhook-info">
@@ -386,9 +386,9 @@ function openWebhookModal(webhook = null) {
     const modal = document.getElementById('webhook-modal');
     const form = document.getElementById('webhook-form');
     const title = document.getElementById('webhook-modal-title');
-    
+
     form.reset();
-    
+
     if (webhook) {
         title.textContent = 'Edit Webhook';
         document.getElementById('webhook-id').value = webhook.id;
@@ -400,7 +400,7 @@ function openWebhookModal(webhook = null) {
     } else {
         title.textContent = 'Create Webhook';
     }
-    
+
     modal.classList.add('show');
 }
 
@@ -416,7 +416,7 @@ async function editWebhook(id) {
 
 async function handleWebhookSubmit(e) {
     e.preventDefault();
-    
+
     const formData = {
         url: document.getElementById('webhook-url').value,
         event_type: document.getElementById('webhook-event-type').value,
@@ -424,23 +424,23 @@ async function handleWebhookSubmit(e) {
         description: document.getElementById('webhook-description').value || null,
         enabled: document.getElementById('webhook-enabled').checked
     };
-    
+
     const webhookId = document.getElementById('webhook-id').value;
     const url = webhookId ? `${API_BASE}/webhooks/${webhookId}` : `${API_BASE}/webhooks`;
     const method = webhookId ? 'PUT' : 'POST';
-    
+
     try {
         const response = await fetch(url, {
             method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)
         });
-        
+
         if (!response.ok) {
             const error = await response.json();
             throw new Error(error.detail || 'Save failed');
         }
-        
+
         closeWebhookModal();
         loadWebhooks();
     } catch (error) {
@@ -452,11 +452,11 @@ async function testWebhook(id) {
     try {
         const response = await fetch(`${API_BASE}/webhooks/${id}/test`, { method: 'POST' });
         const result = await response.json();
-        
+
         const message = result.success
             ? `✅ Success! Status: ${result.status_code}, Response time: ${result.response_time_ms}ms`
             : `❌ Failed: ${result.error || result.message}`;
-        
+
         alert(message);
     } catch (error) {
         alert('Error testing webhook: ' + error.message);
@@ -465,7 +465,7 @@ async function testWebhook(id) {
 
 async function deleteWebhook(id) {
     if (!confirm('Are you sure you want to delete this webhook?')) return;
-    
+
     try {
         const response = await fetch(`${API_BASE}/webhooks/${id}`, { method: 'DELETE' });
         if (!response.ok) throw new Error('Delete failed');
