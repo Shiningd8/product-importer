@@ -6,7 +6,9 @@ services:
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: product-importer-db
+          property: connectionString
       - key: REDIS_URL
         sync: false
       - key: CELERY_BROKER_URL
@@ -21,31 +23,17 @@ services:
     startCommand: celery -A app.celery_app worker --loglevel=info
     envVars:
       - key: DATABASE_URL
-        fromService:
-          type: postgres
+        fromDatabase:
           name: product-importer-db
           property: connectionString
       - key: REDIS_URL
-        fromService:
-          type: redis
-          name: product-importer-redis
-          property: connectionString
+        sync: false
       - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: product-importer-redis
-          property: connectionString
+        sync: false
       - key: CELERY_RESULT_BACKEND
-        fromService:
-          type: redis
-          name: product-importer-redis
-          property: connectionString
+        sync: false
 
 databases:
   - name: product-importer-db
     databaseName: product_importer
     user: product_importer_user
-
-  - name: product-importer-redis
-    plan: free
-
