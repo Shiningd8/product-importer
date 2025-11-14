@@ -1,0 +1,51 @@
+services:
+  - type: web
+    name: product-importer-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: CELERY_BROKER_URL
+        sync: false
+      - key: CELERY_RESULT_BACKEND
+        sync: false
+
+  - type: worker
+    name: product-importer-worker
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A app.celery_app worker --loglevel=info
+    envVars:
+      - key: DATABASE_URL
+        fromService:
+          type: postgres
+          name: product-importer-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: product-importer-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: product-importer-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: product-importer-redis
+          property: connectionString
+
+databases:
+  - name: product-importer-db
+    databaseName: product_importer
+    user: product_importer_user
+
+  - name: product-importer-redis
+    plan: free
+
